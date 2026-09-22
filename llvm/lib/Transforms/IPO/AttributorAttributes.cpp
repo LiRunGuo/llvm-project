@@ -12984,7 +12984,12 @@ struct AAInvariantLoadPointerCallSiteReturned final
 
   void initialize(Attributor &A) override {
     const Function *F = getAssociatedFunction();
-    assert(F && "no associated function for return from call");
+    // Indirect calls have no associated function; we cannot reason about
+    // the returned pointer.
+    if (!F) {
+      indicatePessimisticFixpoint();
+      return;
+    }
 
     if (!F->isDeclaration() && !F->isIntrinsic())
       return AAInvariantLoadPointerImpl::initialize(A);

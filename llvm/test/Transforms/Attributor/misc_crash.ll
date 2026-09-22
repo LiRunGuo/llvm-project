@@ -125,6 +125,47 @@ define internal i16 @bar3(ptr %p1, i16 %p2) {
 }
 
 declare void @func6(ptr)
+
+; Pointers returned from indirect calls must not crash AAInvariantLoadPointer.
+define i32 @load_from_indirect_call_result(ptr %fp) {
+; CHECK-LABEL: define {{[^@]+}}@load_from_indirect_call_result
+; CHECK-SAME: (ptr nofree noundef nonnull captures(none) [[FP:%.*]]) {
+; CHECK-NEXT:    [[P:%.*]] = call ptr [[FP]]()
+; CHECK-NEXT:    [[L:%.*]] = load i32, ptr [[P]], align 4
+; CHECK-NEXT:    ret i32 [[L]]
+;
+  %p = call ptr %fp()
+  %l = load i32, ptr %p
+  ret i32 %l
+}
+
+define i32 @load_from_indirect_invoke_result(ptr %fp) personality ptr null {
+; CHECK-LABEL: define {{[^@]+}}@load_from_indirect_invoke_result
+; CHECK-SAME: (ptr nofree noundef nonnull captures(none) [[FP:%.*]]) personality ptr null {
+; CHECK-NEXT:  entry:
+; CHECK-NEXT:    [[P:%.*]] = invoke ptr [[FP]]()
+; CHECK-NEXT:            to label [[CONT:%.*]] unwind label [[LPAD:%.*]]
+; CHECK:       cont:
+; CHECK-NEXT:    [[L:%.*]] = load i32, ptr [[P]], align 4
+; CHECK-NEXT:    ret i32 [[L]]
+; CHECK:       lpad:
+; CHECK-NEXT:    [[LP:%.*]] = landingpad { ptr, i32 }
+; CHECK-NEXT:            cleanup
+; CHECK-NEXT:    ret i32 0
+;
+entry:
+  %p = invoke ptr %fp()
+  to label %cont unwind label %lpad
+
+cont:
+  %l = load i32, ptr %p
+  ret i32 %l
+
+lpad:
+  %lp = landingpad { ptr, i32 }
+  cleanup
+  ret i32 0
+}
 ;.
 ; CHECK: attributes #[[ATTR0]] = { mustprogress nofree norecurse nosync nounwind willreturn memory(none) }
 ; CHECK: attributes #[[ATTR1]] = { mustprogress nofree norecurse nosync nounwind willreturn memory(write) }
