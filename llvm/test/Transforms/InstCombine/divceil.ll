@@ -208,3 +208,96 @@ define i32 @divceil_trunc_nuw_range(i32 range(i32 0, 33) %x_wide) {
   %result = add i32 %q_ext, %round
   ret i32 %result
 }
+
+; The ranges of %x and %y can also be established by assumptions.
+
+define i8 @divceil_i8_var_divisor_assume_x(i8 %x, i8 range(i8 1, 11) %y) {
+; CHECK-LABEL: @divceil_i8_var_divisor_assume_x(
+; CHECK-NEXT:    [[BOUND:%.*]] = icmp ult i8 [[X:%.*]], 101
+; CHECK-NEXT:    call void @llvm.assume(i1 [[BOUND]])
+; CHECK-NEXT:    [[Q:%.*]] = udiv i8 [[X]], [[Y:%.*]]
+; CHECK-NEXT:    [[R:%.*]] = urem i8 [[X]], [[Y]]
+; CHECK-NEXT:    [[COND:%.*]] = icmp ne i8 [[R]], 0
+; CHECK-NEXT:    [[ROUND:%.*]] = zext i1 [[COND]] to i8
+; CHECK-NEXT:    [[RESULT:%.*]] = add nuw i8 [[Q]], [[ROUND]]
+; CHECK-NEXT:    ret i8 [[RESULT]]
+;
+  %bound = icmp ule i8 %x, 100
+  call void @llvm.assume(i1 %bound)
+  %q = udiv i8 %x, %y
+  %r = urem i8 %x, %y
+  %cond = icmp ne i8 %r, 0
+  %round = zext i1 %cond to i8
+  %result = add i8 %q, %round
+  ret i8 %result
+}
+
+define i16 @divceil_i8_var_divisor_zext_assume_x(i8 %x, i8 range(i8 1, 11) %y) {
+; CHECK-LABEL: @divceil_i8_var_divisor_zext_assume_x(
+; CHECK-NEXT:    [[BOUND:%.*]] = icmp ult i8 [[X:%.*]], 101
+; CHECK-NEXT:    call void @llvm.assume(i1 [[BOUND]])
+; CHECK-NEXT:    [[Q:%.*]] = udiv i8 [[X]], [[Y:%.*]]
+; CHECK-NEXT:    [[R:%.*]] = urem i8 [[X]], [[Y]]
+; CHECK-NEXT:    [[COND:%.*]] = icmp ne i8 [[R]], 0
+; CHECK-NEXT:    [[Q_EXT:%.*]] = zext nneg i8 [[Q]] to i16
+; CHECK-NEXT:    [[ROUND:%.*]] = zext i1 [[COND]] to i16
+; CHECK-NEXT:    [[RESULT:%.*]] = add nuw nsw i16 [[ROUND]], [[Q_EXT]]
+; CHECK-NEXT:    ret i16 [[RESULT]]
+;
+  %bound = icmp ule i8 %x, 100
+  call void @llvm.assume(i1 %bound)
+  %q = udiv i8 %x, %y
+  %r = urem i8 %x, %y
+  %cond = icmp ne i8 %r, 0
+  %q_ext = zext i8 %q to i16
+  %round = zext i1 %cond to i16
+  %result = add i16 %round, %q_ext
+  ret i16 %result
+}
+
+define i8 @divceil_i8_var_divisor_assume_y(i8 range(i8 0, 101) %x, i8 %y) {
+; CHECK-LABEL: @divceil_i8_var_divisor_assume_y(
+; CHECK-NEXT:    [[Y_LO:%.*]] = icmp samesign ugt i8 [[Y:%.*]], 1
+; CHECK-NEXT:    call void @llvm.assume(i1 [[Y_LO]])
+; CHECK-NEXT:    [[Y_HI:%.*]] = icmp ult i8 [[Y]], 11
+; CHECK-NEXT:    call void @llvm.assume(i1 [[Y_HI]])
+; CHECK-NEXT:    [[Q:%.*]] = udiv i8 [[X:%.*]], [[Y]]
+; CHECK-NEXT:    [[R:%.*]] = urem i8 [[X]], [[Y]]
+; CHECK-NEXT:    [[COND:%.*]] = icmp ne i8 [[R]], 0
+; CHECK-NEXT:    [[ROUND:%.*]] = zext i1 [[COND]] to i8
+; CHECK-NEXT:    [[RESULT:%.*]] = add nuw i8 [[Q]], [[ROUND]]
+; CHECK-NEXT:    ret i8 [[RESULT]]
+;
+  %y.lo = icmp ugt i8 %y, 1
+  call void @llvm.assume(i1 %y.lo)
+  %y.hi = icmp ule i8 %y, 10
+  call void @llvm.assume(i1 %y.hi)
+  %q = udiv i8 %x, %y
+  %r = urem i8 %x, %y
+  %cond = icmp ne i8 %r, 0
+  %round = zext i1 %cond to i8
+  %result = add i8 %q, %round
+  ret i8 %result
+}
+
+; Negative test: the assumed bound on %x is too weak, X + (Y - 1) may wrap.
+define i8 @divceil_i8_var_divisor_assume_x_too_large(i8 %x, i8 range(i8 1, 11) %y) {
+; CHECK-LABEL: @divceil_i8_var_divisor_assume_x_too_large(
+; CHECK-NEXT:    [[BOUND:%.*]] = icmp ult i8 [[X:%.*]], -5
+; CHECK-NEXT:    call void @llvm.assume(i1 [[BOUND]])
+; CHECK-NEXT:    [[Q:%.*]] = udiv i8 [[X]], [[Y:%.*]]
+; CHECK-NEXT:    [[R:%.*]] = urem i8 [[X]], [[Y]]
+; CHECK-NEXT:    [[COND:%.*]] = icmp ne i8 [[R]], 0
+; CHECK-NEXT:    [[ROUND:%.*]] = zext i1 [[COND]] to i8
+; CHECK-NEXT:    [[RESULT:%.*]] = add i8 [[Q]], [[ROUND]]
+; CHECK-NEXT:    ret i8 [[RESULT]]
+;
+  %bound = icmp ule i8 %x, 250
+  call void @llvm.assume(i1 %bound)
+  %q = udiv i8 %x, %y
+  %r = urem i8 %x, %y
+  %cond = icmp ne i8 %r, 0
+  %round = zext i1 %cond to i8
+  %result = add i8 %q, %round
+  ret i8 %result
+}
