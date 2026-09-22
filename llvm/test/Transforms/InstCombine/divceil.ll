@@ -215,11 +215,9 @@ define i8 @divceil_i8_var_divisor_assume_x(i8 %x, i8 range(i8 1, 11) %y) {
 ; CHECK-LABEL: @divceil_i8_var_divisor_assume_x(
 ; CHECK-NEXT:    [[BOUND:%.*]] = icmp ult i8 [[X:%.*]], 101
 ; CHECK-NEXT:    call void @llvm.assume(i1 [[BOUND]])
-; CHECK-NEXT:    [[Q:%.*]] = udiv i8 [[X]], [[Y:%.*]]
-; CHECK-NEXT:    [[R:%.*]] = urem i8 [[X]], [[Y]]
-; CHECK-NEXT:    [[COND:%.*]] = icmp ne i8 [[R]], 0
-; CHECK-NEXT:    [[ROUND:%.*]] = zext i1 [[COND]] to i8
-; CHECK-NEXT:    [[RESULT:%.*]] = add nuw i8 [[Q]], [[ROUND]]
+; CHECK-NEXT:    [[TMP1:%.*]] = add nsw i8 [[Y:%.*]], -1
+; CHECK-NEXT:    [[TMP2:%.*]] = add nuw i8 [[X]], [[TMP1]]
+; CHECK-NEXT:    [[RESULT:%.*]] = udiv i8 [[TMP2]], [[Y]]
 ; CHECK-NEXT:    ret i8 [[RESULT]]
 ;
   %bound = icmp ule i8 %x, 100
@@ -236,12 +234,10 @@ define i16 @divceil_i8_var_divisor_zext_assume_x(i8 %x, i8 range(i8 1, 11) %y) {
 ; CHECK-LABEL: @divceil_i8_var_divisor_zext_assume_x(
 ; CHECK-NEXT:    [[BOUND:%.*]] = icmp ult i8 [[X:%.*]], 101
 ; CHECK-NEXT:    call void @llvm.assume(i1 [[BOUND]])
-; CHECK-NEXT:    [[Q:%.*]] = udiv i8 [[X]], [[Y:%.*]]
-; CHECK-NEXT:    [[R:%.*]] = urem i8 [[X]], [[Y]]
-; CHECK-NEXT:    [[COND:%.*]] = icmp ne i8 [[R]], 0
-; CHECK-NEXT:    [[Q_EXT:%.*]] = zext nneg i8 [[Q]] to i16
-; CHECK-NEXT:    [[ROUND:%.*]] = zext i1 [[COND]] to i16
-; CHECK-NEXT:    [[RESULT:%.*]] = add nuw nsw i16 [[ROUND]], [[Q_EXT]]
+; CHECK-NEXT:    [[TMP1:%.*]] = add nsw i8 [[Y:%.*]], -1
+; CHECK-NEXT:    [[TMP2:%.*]] = add nuw i8 [[X]], [[TMP1]]
+; CHECK-NEXT:    [[TMP3:%.*]] = udiv i8 [[TMP2]], [[Y]]
+; CHECK-NEXT:    [[RESULT:%.*]] = zext i8 [[TMP3]] to i16
 ; CHECK-NEXT:    ret i16 [[RESULT]]
 ;
   %bound = icmp ule i8 %x, 100
@@ -261,11 +257,9 @@ define i8 @divceil_i8_var_divisor_assume_y(i8 range(i8 0, 101) %x, i8 %y) {
 ; CHECK-NEXT:    call void @llvm.assume(i1 [[Y_LO]])
 ; CHECK-NEXT:    [[Y_HI:%.*]] = icmp ult i8 [[Y]], 11
 ; CHECK-NEXT:    call void @llvm.assume(i1 [[Y_HI]])
-; CHECK-NEXT:    [[Q:%.*]] = udiv i8 [[X:%.*]], [[Y]]
-; CHECK-NEXT:    [[R:%.*]] = urem i8 [[X]], [[Y]]
-; CHECK-NEXT:    [[COND:%.*]] = icmp ne i8 [[R]], 0
-; CHECK-NEXT:    [[ROUND:%.*]] = zext i1 [[COND]] to i8
-; CHECK-NEXT:    [[RESULT:%.*]] = add nuw i8 [[Q]], [[ROUND]]
+; CHECK-NEXT:    [[TMP1:%.*]] = add nsw i8 [[Y]], -1
+; CHECK-NEXT:    [[TMP2:%.*]] = add nuw i8 [[X:%.*]], [[TMP1]]
+; CHECK-NEXT:    [[RESULT:%.*]] = udiv i8 [[TMP2]], [[Y]]
 ; CHECK-NEXT:    ret i8 [[RESULT]]
 ;
   %y.lo = icmp ugt i8 %y, 1
