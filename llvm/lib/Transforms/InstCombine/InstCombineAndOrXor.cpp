@@ -2469,6 +2469,30 @@ Value *InstCombinerImpl::reassociateBooleanAndOr(Value *LHS, Value *X, Value *Y,
   return Folded;
 }
 
+/// Fold Res, Overflow = (umul.with.overflow x c1);
+/// (and (not Overflow) (ult Res c2)) --> (ult x ((c2-1)/c1 + 1)).
+/// This is the inverse of foldOrUnsignedUMulOverflowICmp: it checks whether a
+/// multiplication of two unsigned numbers (one is a constant) is
+/// mathematically less than a second constant.
+static Value *
+foldAndUnsignedUMulNoOverflowICmp(BinaryOperator &I,
+                                  InstCombiner::BuilderTy &Builder) {
+  Value *WOV, *X;
+  const APInt *C1, *C2;
+  if (match(&I,
+            m_c_And(m_Not(m_ExtractValue<1>(
+                        m_Value(WOV, m_Intrinsic<Intrinsic::umul_with_overflow>(
+                                         m_Value(X), m_APInt(C1))))),
+                    m_OneUse(m_SpecificCmp(ICmpInst::ICMP_ULT,
+                                           m_ExtractValue<0>(m_Deferred(WOV)),
+                                           m_APInt(C2))))) &&
+      !C1->isZero() && !C2->isZero()) {
+    Constant *NewC = ConstantInt::get(X->getType(), (*C2 - 1).udiv(*C1) + 1);
+    return Builder.CreateICmp(ICmpInst::ICMP_ULT, X, NewC);
+  }
+  return nullptr;
+}
+
 // FIXME: We use commutative matchers (m_c_*) for some, but not all, matches
 // here. We should standardize that construct where it is needed or choose some
 // other way to ensure that commutated variants of patterns are not missed.
@@ -2930,6 +2954,11 @@ Instruction *InstCombinerImpl::visitAnd(BinaryOperator &I) {
     return createSelectInstWithUnknownProfile(IsNeg,
                                               ConstantInt::getNullValue(Ty), Y);
   }
+
+  // Try to fold the pattern "!Overflow & icmp ult Res, C2" into a single
+  // comparison instruction for umul.with.overflow.
+  if (Value *R = foldAndUnsignedUMulNoOverflowICmp(I, Builder))
+    return replaceInstUsesWith(I, R);
 
   // (~x) & y  -->  ~(x | (~y))  iff that gets rid of inversions
   if (sinkNotIntoOtherHandOfLogicalOp(I))

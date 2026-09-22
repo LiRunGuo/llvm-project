@@ -8,12 +8,7 @@ declare void @use.i64i1({i64, i1} %x)
 define i1 @umul_less_than_and_no_overflow_const(i64 %in) {
 ; CHECK-LABEL: define i1 @umul_less_than_and_no_overflow_const(
 ; CHECK-SAME: i64 [[IN:%.*]]) {
-; CHECK-NEXT:    [[MWO:%.*]] = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 [[IN]], i64 168)
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { i64, i1 } [[MWO]], 0
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { i64, i1 } [[MWO]], 1
-; CHECK-NEXT:    [[NOVF:%.*]] = xor i1 [[OVF]], true
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i64 [[MUL]], 1000
-; CHECK-NEXT:    [[RET:%.*]] = and i1 [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult i64 [[IN]], 6
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
   %mwo = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 %in, i64 168)
@@ -28,12 +23,7 @@ define i1 @umul_less_than_and_no_overflow_const(i64 %in) {
 define i1 @umul_less_than_and_no_overflow_const_i8(i8 %in) {
 ; CHECK-LABEL: define i1 @umul_less_than_and_no_overflow_const_i8(
 ; CHECK-SAME: i8 [[IN:%.*]]) {
-; CHECK-NEXT:    [[MWO:%.*]] = call { i8, i1 } @llvm.umul.with.overflow.i8(i8 [[IN]], i8 24)
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { i8, i1 } [[MWO]], 0
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { i8, i1 } [[MWO]], 1
-; CHECK-NEXT:    [[NOVF:%.*]] = xor i1 [[OVF]], true
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i8 [[MUL]], 100
-; CHECK-NEXT:    [[RET:%.*]] = and i1 [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult i8 [[IN]], 5
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
   %mwo = call { i8, i1 } @llvm.umul.with.overflow.i8(i8 %in, i8 24)
@@ -48,12 +38,7 @@ define i1 @umul_less_than_and_no_overflow_const_i8(i8 %in) {
 define i1 @umul_less_than_and_no_overflow_const_commuted(i64 %in) {
 ; CHECK-LABEL: define i1 @umul_less_than_and_no_overflow_const_commuted(
 ; CHECK-SAME: i64 [[IN:%.*]]) {
-; CHECK-NEXT:    [[MWO:%.*]] = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 [[IN]], i64 168)
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { i64, i1 } [[MWO]], 0
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { i64, i1 } [[MWO]], 1
-; CHECK-NEXT:    [[NOVF:%.*]] = xor i1 [[OVF]], true
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i64 [[MUL]], 1000
-; CHECK-NEXT:    [[RET:%.*]] = and i1 [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult i64 [[IN]], 6
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
   %mwo = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 %in, i64 168)
@@ -68,12 +53,7 @@ define i1 @umul_less_than_and_no_overflow_const_commuted(i64 %in) {
 define i1 @umul_less_than_and_no_overflow_const_exact_multiple(i64 %in) {
 ; CHECK-LABEL: define i1 @umul_less_than_and_no_overflow_const_exact_multiple(
 ; CHECK-SAME: i64 [[IN:%.*]]) {
-; CHECK-NEXT:    [[MWO:%.*]] = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 [[IN]], i64 48)
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { i64, i1 } [[MWO]], 0
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { i64, i1 } [[MWO]], 1
-; CHECK-NEXT:    [[NOVF:%.*]] = xor i1 [[OVF]], true
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i64 [[MUL]], 480
-; CHECK-NEXT:    [[RET:%.*]] = and i1 [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult i64 [[IN]], 10
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
   %mwo = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 %in, i64 48)
@@ -125,12 +105,8 @@ define i1 @umul_less_than_and_no_overflow_const_max_multiplier(i64 %in) {
 define i1 @umul_less_than_and_no_overflow_const_multiuse_mul(i64 %in) {
 ; CHECK-LABEL: define i1 @umul_less_than_and_no_overflow_const_multiuse_mul(
 ; CHECK-SAME: i64 [[IN:%.*]]) {
-; CHECK-NEXT:    [[MWO:%.*]] = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 [[IN]], i64 48)
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { i64, i1 } [[MWO]], 0
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { i64, i1 } [[MWO]], 1
-; CHECK-NEXT:    [[NOVF:%.*]] = xor i1 [[OVF]], true
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i64 [[MUL]], 1000
-; CHECK-NEXT:    [[RET:%.*]] = and i1 [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[MUL:%.*]] = mul i64 [[IN]], 48
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult i64 [[IN]], 21
 ; CHECK-NEXT:    call void @use.i64(i64 [[MUL]])
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
@@ -147,12 +123,8 @@ define i1 @umul_less_than_and_no_overflow_const_multiuse_mul(i64 %in) {
 define i1 @umul_less_than_and_no_overflow_const_multiuse_overflow(i64 %in) {
 ; CHECK-LABEL: define i1 @umul_less_than_and_no_overflow_const_multiuse_overflow(
 ; CHECK-SAME: i64 [[IN:%.*]]) {
-; CHECK-NEXT:    [[MWO:%.*]] = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 [[IN]], i64 48)
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { i64, i1 } [[MWO]], 0
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { i64, i1 } [[MWO]], 1
-; CHECK-NEXT:    [[NOVF:%.*]] = xor i1 [[OVF]], true
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i64 [[MUL]], 1000
-; CHECK-NEXT:    [[RET:%.*]] = and i1 [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[OVF:%.*]] = icmp ugt i64 [[IN]], 384307168202282325
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult i64 [[IN]], 21
 ; CHECK-NEXT:    call void @use.i1(i1 [[OVF]])
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
@@ -169,12 +141,8 @@ define i1 @umul_less_than_and_no_overflow_const_multiuse_overflow(i64 %in) {
 define i1 @umul_less_than_and_no_overflow_const_multiuse_not(i64 %in) {
 ; CHECK-LABEL: define i1 @umul_less_than_and_no_overflow_const_multiuse_not(
 ; CHECK-SAME: i64 [[IN:%.*]]) {
-; CHECK-NEXT:    [[MWO:%.*]] = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 [[IN]], i64 48)
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { i64, i1 } [[MWO]], 0
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { i64, i1 } [[MWO]], 1
-; CHECK-NEXT:    [[NOVF:%.*]] = xor i1 [[OVF]], true
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i64 [[MUL]], 1000
-; CHECK-NEXT:    [[RET:%.*]] = and i1 [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[NOVF:%.*]] = icmp ult i64 [[IN]], 384307168202282326
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult i64 [[IN]], 21
 ; CHECK-NEXT:    call void @use.i1(i1 [[NOVF]])
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
@@ -192,11 +160,7 @@ define i1 @umul_less_than_and_no_overflow_const_multiuse_umul_call(i64 %in) {
 ; CHECK-LABEL: define i1 @umul_less_than_and_no_overflow_const_multiuse_umul_call(
 ; CHECK-SAME: i64 [[IN:%.*]]) {
 ; CHECK-NEXT:    [[MWO:%.*]] = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 [[IN]], i64 48)
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { i64, i1 } [[MWO]], 0
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { i64, i1 } [[MWO]], 1
-; CHECK-NEXT:    [[NOVF:%.*]] = xor i1 [[OVF]], true
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i64 [[MUL]], 1000
-; CHECK-NEXT:    [[RET:%.*]] = and i1 [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult i64 [[IN]], 21
 ; CHECK-NEXT:    call void @use.i64i1({ i64, i1 } [[MWO]])
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
@@ -213,12 +177,7 @@ define i1 @umul_less_than_and_no_overflow_const_multiuse_umul_call(i64 %in) {
 define <2 x i1> @umul_less_than_and_no_overflow_const_vector_splat(<2 x i64> %in) {
 ; CHECK-LABEL: define <2 x i1> @umul_less_than_and_no_overflow_const_vector_splat(
 ; CHECK-SAME: <2 x i64> [[IN:%.*]]) {
-; CHECK-NEXT:    [[MWO:%.*]] = call { <2 x i64>, <2 x i1> } @llvm.umul.with.overflow.v2i64(<2 x i64> [[IN]], <2 x i64> splat (i64 168))
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { <2 x i64>, <2 x i1> } [[MWO]], 0
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { <2 x i64>, <2 x i1> } [[MWO]], 1
-; CHECK-NEXT:    [[NOVF:%.*]] = xor <2 x i1> [[OVF]], splat (i1 true)
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult <2 x i64> [[MUL]], splat (i64 1000)
-; CHECK-NEXT:    [[RET:%.*]] = and <2 x i1> [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult <2 x i64> [[IN]], splat (i64 6)
 ; CHECK-NEXT:    ret <2 x i1> [[RET]]
 ;
   %mwo = call { <2 x i64>, <2 x i1> } @llvm.umul.with.overflow.v2i64(<2 x i64> %in, <2 x i64> splat (i64 168))
@@ -233,12 +192,7 @@ define <2 x i1> @umul_less_than_and_no_overflow_const_vector_splat(<2 x i64> %in
 define i1 @umul_less_than_logical_and_no_overflow_const(i64 %in) {
 ; CHECK-LABEL: define i1 @umul_less_than_logical_and_no_overflow_const(
 ; CHECK-SAME: i64 [[IN:%.*]]) {
-; CHECK-NEXT:    [[MWO:%.*]] = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 [[IN]], i64 168)
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { i64, i1 } [[MWO]], 0
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { i64, i1 } [[MWO]], 1
-; CHECK-NEXT:    [[NOVF:%.*]] = xor i1 [[OVF]], true
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i64 [[MUL]], 1000
-; CHECK-NEXT:    [[RET:%.*]] = and i1 [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult i64 [[IN]], 6
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
   %mwo = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 %in, i64 168)
@@ -254,13 +208,7 @@ define i1 @umul_less_than_logical_and_no_overflow_const(i64 %in) {
 define i1 @umul_less_than_and_no_overflow_const_sext(i32 %x) {
 ; CHECK-LABEL: define i1 @umul_less_than_and_no_overflow_const_sext(
 ; CHECK-SAME: i32 [[X:%.*]]) {
-; CHECK-NEXT:    [[E:%.*]] = sext i32 [[X]] to i64
-; CHECK-NEXT:    [[MWO:%.*]] = call { i64, i1 } @llvm.umul.with.overflow.i64(i64 [[E]], i64 3)
-; CHECK-NEXT:    [[OVF:%.*]] = extractvalue { i64, i1 } [[MWO]], 1
-; CHECK-NEXT:    [[MUL:%.*]] = extractvalue { i64, i1 } [[MWO]], 0
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i64 [[MUL]], 41
-; CHECK-NEXT:    [[NOVF:%.*]] = xor i1 [[OVF]], true
-; CHECK-NEXT:    [[RET:%.*]] = and i1 [[CMP]], [[NOVF]]
+; CHECK-NEXT:    [[RET:%.*]] = icmp ult i32 [[X]], 14
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
   %e = sext i32 %x to i64
