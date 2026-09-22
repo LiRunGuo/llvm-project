@@ -663,3 +663,58 @@ define void @memset_large_offset_nonzero_size(ptr %dst) {
   call void @llvm.memset.p0.i64(ptr %offset, i8 0, i64 3, i1 false)
   ret void
 }
+
+; Zero-sized accesses do not access any bytes.
+define void @zero_size_load_nonzero_offset(ptr %p) {
+; CHECK: Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: readwrite)
+; CHECK-LABEL: define void @zero_size_load_nonzero_offset(
+; CHECK-SAME: ptr nofree captures(none) [[P:%.*]]) #[[ATTR1]] {
+; CHECK-NEXT:    [[G:%.*]] = getelementptr i8, ptr [[P]], i64 8
+; CHECK-NEXT:    [[V:%.*]] = load {}, ptr [[G]], align 1
+; CHECK-NEXT:    store i32 1, ptr [[P]], align 4
+; CHECK-NEXT:    ret void
+;
+  %g = getelementptr i8, ptr %p, i64 8
+  %v = load {}, ptr %g
+  store i32 1, ptr %p
+  ret void
+}
+
+define void @zero_size_store_nonzero_offset(ptr %p) {
+; CHECK: Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: write)
+; CHECK-LABEL: define void @zero_size_store_nonzero_offset(
+; CHECK-SAME: ptr nofree writeonly captures(none) initializes((0, 4)) [[P:%.*]]) #[[ATTR0]] {
+; CHECK-NEXT:    [[G:%.*]] = getelementptr i8, ptr [[P]], i64 8
+; CHECK-NEXT:    store {} zeroinitializer, ptr [[G]], align 1
+; CHECK-NEXT:    store i32 1, ptr [[P]], align 4
+; CHECK-NEXT:    ret void
+;
+  %g = getelementptr i8, ptr %p, i64 8
+  store {} zeroinitializer, ptr %g
+  store i32 1, ptr %p
+  ret void
+}
+
+define void @zero_size_store_minus_one_offset(ptr %p) {
+; CHECK: Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: write)
+; CHECK-LABEL: define void @zero_size_store_minus_one_offset(
+; CHECK-SAME: ptr nofree writeonly captures(none) [[P:%.*]]) #[[ATTR0]] {
+; CHECK-NEXT:    [[G:%.*]] = getelementptr i8, ptr [[P]], i64 -1
+; CHECK-NEXT:    store [0 x i32] zeroinitializer, ptr [[G]], align 4
+; CHECK-NEXT:    ret void
+;
+  %g = getelementptr i8, ptr %p, i64 -1
+  store [0 x i32] zeroinitializer, ptr %g
+  ret void
+}
+
+define void @zero_size_store_zero_offset(ptr %p) {
+; CHECK: Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: write)
+; CHECK-LABEL: define void @zero_size_store_zero_offset(
+; CHECK-SAME: ptr nofree writeonly captures(none) [[P:%.*]]) #[[ATTR0]] {
+; CHECK-NEXT:    store {} zeroinitializer, ptr [[P]], align 1
+; CHECK-NEXT:    ret void
+;
+  store {} zeroinitializer, ptr %p
+  ret void
+}

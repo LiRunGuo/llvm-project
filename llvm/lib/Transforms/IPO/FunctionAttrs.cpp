@@ -659,6 +659,9 @@ ArgumentAccessInfo getArgumentAccessInfo(const Instruction *I,
     auto TypeSize = DL.getTypeStoreSize(Ty);
     if (!TypeSize.isScalable() && Offset) {
       int64_t Size = TypeSize.getFixedValue();
+      // Reject zero-sized accesses, like zero lengths below.
+      if (Size == 0)
+        return std::nullopt;
       APInt Low(64, *Offset, true);
       bool Overflow;
       APInt High = Low.sadd_ov(APInt(64, Size, true), Overflow);
